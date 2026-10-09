@@ -12,7 +12,7 @@ describe('.makeRe', function() {
   });
 
   it('should throw an error when string exceeds max safe length', function() {
-    var MAX_LENGTH = 1024 * 64;
+    var MAX_LENGTH = 2048;
 
     assert.throws(function() {
       braces.makeRe(Array(MAX_LENGTH + 1).join('.'));

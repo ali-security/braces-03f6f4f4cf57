@@ -16,7 +16,7 @@ var compilers = require('./lib/compilers');
 var parsers = require('./lib/parsers');
 var Braces = require('./lib/braces');
 var utils = require('./lib/utils');
-var MAX_LENGTH = 1024 * 64;
+var MAX_LENGTH = 2048;
 var cache = {};
 
 /**
