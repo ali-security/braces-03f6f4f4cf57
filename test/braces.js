@@ -143,4 +143,113 @@ describe('braces', function() {
     equal('{,b}{,d}', [ '(|b)(|d)' ]);
     equal('{a,b}{,d}', [ '(a|b)(|d)' ]);
   });
+
+  describe('nesting depth', function() {
+    function repeat(str, n) {
+      return new Array(n + 1).join(str);
+    }
+
+    function nested(n) {
+      return repeat('{', n) + 'a,b' + repeat('}', n);
+    }
+
+    it('should reject deeply nested braces instead of overflowing the stack', function() {
+      [nested(101), nested(1000)].forEach(function(input) {
+        assert.throws(function() {
+          braces(input);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces(input, {expand: true});
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces([input]);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces.expand(input);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces.optimize(input);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces.create(input);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces.makeRe(input);
+        }, /exceeds max depth/);
+        assert.throws(function() {
+          braces.compile(input);
+        }, /exceeds max depth/);
+      });
+    });
+
+    it('should reject deeply nested braces when options.maxLength is raised', function() {
+      var input = nested(10000);
+      var opts = {maxLength: input.length + 1};
+      assert.throws(function() {
+        braces(input, opts);
+      }, /exceeds max depth/);
+      assert.throws(function() {
+        braces.expand(input, opts);
+      }, /exceeds max depth/);
+      assert.throws(function() {
+        braces.makeRe(input, opts);
+      }, /exceeds max depth/);
+    });
+
+    it('should reject deeply nested unclosed braces', function() {
+      var input = repeat('{', 1000) + 'a,b';
+      assert.throws(function() {
+        braces(input);
+      }, /exceeds max depth/);
+      assert.throws(function() {
+        braces.expand(input);
+      }, /exceeds max depth/);
+    });
+
+    it('should not cache patterns that exceed the maximum depth', function() {
+      var input = nested(101);
+      assert.throws(function() {
+        braces(input);
+      }, /exceeds max depth/);
+      assert.throws(function() {
+        braces(input);
+      }, /exceeds max depth/);
+    });
+
+    it('should support nesting up to the maximum depth', function() {
+      var input = nested(100);
+      assert.doesNotThrow(function() {
+        braces(input);
+      });
+      assert.doesNotThrow(function() {
+        braces(input, {expand: true});
+      });
+      assert.doesNotThrow(function() {
+        braces.makeRe(input);
+      });
+    });
+
+    it('should support a lower maximum depth', function() {
+      assert.throws(function() {
+        braces('{{a,b},c}', {maxDepth: 1});
+      }, /exceeds max depth/);
+      assert.throws(function() {
+        braces('{{a,b},c}', {maxDepth: 1, expand: true});
+      }, /exceeds max depth/);
+      assert.deepEqual(braces('{{a,b},c}', {maxDepth: 2}), braces('{{a,b},c}'));
+      assert.deepEqual(braces.expand('{{a,b},c}', {maxDepth: 2}), braces.expand('{{a,b},c}'));
+    });
+
+    it('should not allow options.maxDepth to raise the maximum depth', function() {
+      assert.throws(function() {
+        braces(nested(101), {maxDepth: 1000});
+      }, /exceeds max depth/);
+    });
+
+    it('should not limit parentheses, which do not create nested nodes', function() {
+      var input = repeat('(', 1000) + repeat(')', 1000);
+      assert.deepEqual(braces(input), [input]);
+      assert.deepEqual(braces(input, {expand: true}), [input]);
+    });
+  });
 });
