@@ -1,0 +1,25 @@
+name: seal-build
+on:
+  workflow_dispatch:
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '9'
+      - name: Pack
+        run: |
+          node --version
+          npm --version
+          mkdir -p dist-out
+          npm pack
+          mv braces-*.tgz dist-out/
+          ls -la dist-out
+          tar -tzvf dist-out/braces-2.3.2.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: braces-tgz
+          path: dist-out/braces-*.tgz
